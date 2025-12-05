@@ -158,7 +158,7 @@ tableauTrie* supprimerTab(personne persona, tableauTrie* tab){
     }
     
     // Décale tous les éléments suivants vers la GAUCHE pour écraser la case à supprimer
-    for(int j=index; j<tab->nbElements; j++){
+    for(int j=index; j<tab->nbElements -1; j++){
         tab->tab[j] = tab->tab[j+1];
     }
     

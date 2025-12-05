@@ -1,87 +1,198 @@
 /*
- * Nom1 Nom2
- * TP4 
- * Programme de test basique pour vérifier que les fonctions (Ajout, Recherche, Suppression)
- * fonctionnent correctement sur la Liste et le Tableau.
+ * TP4 - Programme Complet
+ * Phase 1 : Tests unitaires (fonctionnement)
+ * Phase 2 : Tests de performances (temps d'exécution)
  */
 
 #include <iostream>
+#include <ctime>      // Pour clock()
 #include "utilitaire_generation.h"
 #include "type_def.h"
 #include "utilitaires.h"
 #include "repertoire.h"
+
 using namespace std;
 
+// Constantes pour la Phase 2 (Performance)
+const int NB_PERSONNES = 1000;
+const int NB_TESTS = 100;
 
-int main(){
-    int idx=0;
-    // Génération de 4 personnes aléatoires pour avoir des données de test
+int main() {
+    // =========================================================
+    // PHASE 1 : VERIFICATION DU FONCTIONNEMENT (Petit Test)
+    // =========================================================
+    cout << "##################################################" << endl;
+    cout << "#    PHASE 1 : VERIFICATION DU FONCTIONNEMENT    #" << endl;
+    cout << "##################################################" << endl;
+
+    int idx = 0;
+    // Génération de 4 personnes aléatoires
     personne firstone = genererPersonne();
     personne secondone = genererPersonne();
     personne thirdone = genererPersonne();
     personne fourthone = genererPersonne();
 
-    // --- PARTIE LISTE CHAINEE ---
-    elementListe* myList = nullptr; // Initialisation obligatoire à null (liste vide)
+    // --- TEST LISTE CHAINEE (FONCTIONNEL) ---
+    elementListe* myList = nullptr; 
 
-    cout << "---- Affichage personne ----" << endl;
-    // Affiche les données générées pour vérifier visuellement
-    affichagePersonne( firstone);
-    affichagePersonne( secondone);
-    affichagePersonne( thirdone);
+    cout << "\n--- Données de test (4 pers) ----" << endl;
+    affichagePersonne(firstone);
+    affichagePersonne(secondone);
+    affichagePersonne(thirdone);
     affichagePersonne(fourthone);
     
-    // Ajoute 3 personnes dans la liste (l'insertion se fait triée selon ta fonction)
+    // Ajout
     myList = ajouter(firstone, myList);
     myList = ajouter(secondone, myList);
     myList = ajouter(thirdone, myList);
 
-    // Test de la recherche : doit retourner la position (0, 1, 2...)
+    // Recherche
+    cout << "\n--- Recherche du 2eme element dans la liste ---" << endl;
     idx = rechercher(secondone, myList);
-    cout << "---- indice du prenom 2 ----" << endl;
-    cout << idx << endl;
+    cout << "Index trouve : " << idx << endl;
 
-    cout << "---- Affiche la liste non supp ----" << endl;
+    cout << "--- Contenu liste avant suppression ---" << endl;
     afficher(myList);
 
-    // Test de la suppression : retire l'élément et recoud la liste
-    cout << "---- affiche la liste supprimer el 2 ---" << endl;
+    // Suppression
+    cout << "--- Suppression du 2eme element ---" << endl;
     myList = supprimer(secondone, myList);
-    afficher(myList); // Vérifie qu'il a bien disparu
+    afficher(myList); 
 
-    // Libération de la mémoire (Nettoyage complet de la liste)
-    elementListe* tmp;
+    // Nettoyage Liste Phase 1
     while (myList != nullptr) {
-        tmp = myList->suivant;
+        elementListe* tmp = myList->suivant;
         delete myList;
         myList = tmp;
     }
 
-    // --- PARTIE TABLEAU TRIE ---
-    cout << "---- Partie tableau ----" << endl;
+    // --- TEST TABLEAU TRIE (FONCTIONNEL) ---
+    cout << "\n---- Test Tableau Trie (Fonctionnel) ----" << endl;
 
-    tableauTrie *tabl = new tableauTrie; // Allocation dynamique de la structure
-    tabl->nbElements = 0; // Important : initialise le compteur à 0
+    tableauTrie *tabl = new tableauTrie;
+    tabl->nbElements = 0; 
 
-    // Remplissage du tableau (la fonction gère le tri et le décalage des cases)
+    // Ajout
     tabl = ajouterTab(firstone, tabl);
     tabl = ajouterTab(secondone, tabl);
     tabl = ajouterTab(thirdone, tabl);
     tabl = ajouterTab(fourthone, tabl);
 
-    afficherTab(tabl); // Vérification du contenu
+    afficherTab(tabl); 
 
-    // Test recherche dans le tableau
+    // Recherche
+    cout << "--- Recherche de la 4eme personne ---" << endl;
     idx = rechercherTab(fourthone, tabl);
-    cout << idx << endl;
+    cout << "Index trouve : " << idx << endl;
 
-    cout << "---- Tableau supprimé ----" << endl;
-    // Test suppression : retire l'élément et décale les suivants pour combler le trou
+    // Suppression
+    cout << "--- Suppression de la 4eme personne ---" << endl;
     tabl = supprimerTab(fourthone, tabl);
     afficherTab(tabl);
 
-    // Libération de la mémoire de la structure tableau
+    // Nettoyage Tableau Phase 1
     delete tabl;
+
+
+    // =========================================================
+    // PHASE 2 : TESTS DE PERFORMANCES (Grand Test)
+    // =========================================================
+    cout << "\n\n";
+    cout << "##################################################" << endl;
+    cout << "#      PHASE 2 : TESTS DE PERFORMANCES           #" << endl;
+    cout << "##################################################" << endl;
+
+    cout << "Generation des " << NB_PERSONNES << " personnes..." << endl;
+    
+    // Tableau temporaire pour le jeu de données
+    personne jeuDeTest[NB_PERSONNES];
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        jeuDeTest[i] = genererPersonne();
+    }
+
+    clock_t start, end;
+    double cpu_time_used;
+
+    // --- LISTE CHAINEE (PERF) ---
+    cout << "\n>>> TESTS LISTE CHAINEE (" << NB_PERSONNES << " elements)" << endl;
+
+    elementListe* maListe = nullptr;
+
+    // Test 1 : Ajout
+    start = clock();
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        maListe = ajouter(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AJOUT : " << cpu_time_used << " s" << endl;
+
+    // Test 2 : Affichage (désactivé pour perf)
+    cout << "Temps AFFICHAGE : (desactive pour ne pas polluer)" << endl;
+
+    // Test 3 : Recherche
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        rechercher(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps RECHERCHE (" << NB_TESTS << " op) : " << cpu_time_used << " s" << endl;
+
+    // Test 4 : Suppression
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        maListe = supprimer(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps SUPPRESSION (" << NB_TESTS << " op) : " << cpu_time_used << " s" << endl;
+
+    // Nettoyage Liste Phase 2
+    while (maListe != nullptr) {
+        elementListe* tmp = maListe->suivant;
+        delete maListe;
+        maListe = tmp;
+    }
+
+    // --- TABLEAU TRIE (PERF) ---
+    cout << "\n>>> TESTS TABLEAU TRIE (" << NB_PERSONNES << " elements)" << endl;
+
+    tableauTrie* monTableau = new tableauTrie;
+    monTableau->nbElements = 0;
+
+    // Test 1 : Ajout
+    start = clock();
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        ajouterTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AJOUT : " << cpu_time_used << " s" << endl;
+
+    // Test 2 : Affichage
+    cout << "Temps AFFICHAGE : (desactive pour ne pas polluer)" << endl;
+
+    // Test 3 : Recherche
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        rechercherTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps RECHERCHE (" << NB_TESTS << " op) : " << cpu_time_used << " s" << endl;
+
+    // Test 4 : Suppression
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        monTableau = supprimerTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps SUPPRESSION (" << NB_TESTS << " op) : " << cpu_time_used << " s" << endl;
+
+    // Nettoyage Tableau Phase 2
+    delete monTableau;
     
     return 0;
 }
