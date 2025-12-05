@@ -1,73 +1,140 @@
 /*
- * Nom1 Nom2
- * TP4 
- * 
- * .......
- * 
+ * TP4 - Comparaison de performances
+ * Sans vector - Utilisation de tableaux statiques pour le jeu de données
  */
 
-
 #include <iostream>
+#include <ctime>      // Pour clock()
 #include "utilitaire_generation.h"
 #include "type_def.h"
 #include "utilitaires.h"
 #include "repertoire.h"
+
 using namespace std;
 
+// Nombre total de personnes pour le test
+const int NB_PERSONNES = 1000;
+// Nombre d'opérations pour la recherche et suppression
+const int NB_TESTS = 100;
 
-int main(){
-    int idx=0;
-    personne firstone = genererPersonne();
-    personne secondone = genererPersonne();
-    personne thirdone = genererPersonne();
-    personne fourthone = genererPersonne();
-    elementListe* myList = nullptr; // liste vide au départ
-    cout << "---- Affichage personne ----" << endl;
-    affichagePersonne( firstone);
-    affichagePersonne( secondone);
-    affichagePersonne( thirdone);
-    affichagePersonne(fourthone);
+int main() {
+    // ---------------------------------------------------------
+    // ETAPE 0 : PRÉPARATION DU JEU DE DONNÉES
+    // ---------------------------------------------------------
+    cout << "Generation des " << NB_PERSONNES << " personnes..." << endl;
     
-
-    myList = ajouter(firstone, myList);
-    myList = ajouter(secondone, myList);
-    myList = ajouter(thirdone, myList);
-
-    idx = rechercher(secondone, myList);
-    cout << "---- indice du prenom 2 ----" << endl;
-    cout << idx << endl;
-    cout << "---- Affiche la liste non supp ----" << endl;
-    afficher(myList);
-    cout << "---- affiche la liste supprimer el 2 ---" << endl;
-    myList = supprimer(secondone, myList);
-    afficher(myList);
-    // libérer toute la liste
-    elementListe* tmp;
-    while (myList != nullptr) {
-        tmp = myList->suivant;
-        delete myList;
-        myList = tmp;
+    // On crée un tableau simple pour stocker les données temporairement
+    // Cela permet d'ajouter exactement les mêmes personnes dans la liste et le tableau
+    personne jeuDeTest[NB_PERSONNES];
+    
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        jeuDeTest[i] = genererPersonne();
     }
-    cout << "---- Partie tableau ----" << endl;
 
-    tableauTrie *tabl = new tableauTrie; // on reserve un emplacement mémoire au tableau
-    
-    tabl->nbElements = 0;
+    clock_t start, end;
+    double cpu_time_used;
 
-    tabl = ajouterTab(firstone, tabl);
-    tabl = ajouterTab(secondone, tabl);
-    tabl = ajouterTab(thirdone, tabl);
-    tabl = ajouterTab(fourthone, tabl);
+    // =========================================================
+    // PARTIE 1 : LISTE CHAÎNÉE
+    // =========================================================
+    cout << "\n-----------------------------------------" << endl;
+    cout << "       TESTS LISTE CHAINEE" << endl;
+    cout << "-----------------------------------------" << endl;
 
-    afficherTab(tabl);
+    elementListe* maListe = nullptr;
 
-    idx = rechercherTab(fourthone, tabl);
+    // --- TEST 1 : AJOUT ---
+    start = clock();
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        maListe = ajouter(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AJOUT (" << NB_PERSONNES << ") : " << cpu_time_used << " s" << endl;
 
-    cout << idx << endl;
-    cout << "---- Tableau supprimé ----" << endl;
-    tabl = supprimerTab(fourthone, tabl);
-    afficherTab(tabl);
-    delete tabl;
+    // --- TEST 2 : AFFICHAGE ---
+    // (L'affichage console est très lent, ne t'étonne pas si ça prend du temps)
+    start = clock();
+    // afficher(maListe); // DECOMMENTER SI BESOIN (pollue la console)
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AFFICHAGE : " << cpu_time_used << " s (desactive)" << endl;
+
+    // --- TEST 3 : RECHERCHE ---
+    // On cherche les 100 premières personnes du jeu de test
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        rechercher(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps RECHERCHE (" << NB_TESTS << ") : " << cpu_time_used << " s" << endl;
+
+    // --- TEST 4 : SUPPRESSION ---
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        maListe = supprimer(jeuDeTest[i], maListe);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps SUPPRESSION (" << NB_TESTS << ") : " << cpu_time_used << " s" << endl;
+
+    // Nettoyage mémoire Liste (Important en C++)
+    while (maListe != nullptr) {
+        elementListe* tmp = maListe->suivant;
+        delete maListe;
+        maListe = tmp;
+    }
+
+    // =========================================================
+    // PARTIE 2 : TABLEAU TRIÉ
+    // =========================================================
+    cout << "\n-----------------------------------------" << endl;
+    cout << "       TESTS TABLEAU TRIE" << endl;
+    cout << "-----------------------------------------" << endl;
+
+    tableauTrie* monTableau = new tableauTrie;
+    monTableau->nbElements = 0;
+
+    // --- TEST 1 : AJOUT ---
+    start = clock();
+    for(int i = 0; i < NB_PERSONNES; i++) {
+        // J'utilise ici la version avec pointeur (*) car c'est la plus performante
+        // Si tu as gardé la version sans pointeur, adapte l'appel
+        ajouterTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AJOUT (" << NB_PERSONNES << ") : " << cpu_time_used << " s" << endl;
+
+    // --- TEST 2 : AFFICHAGE ---
+    start = clock();
+    // afficherTab(monTableau); // DECOMMENTER SI BESOIN
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps AFFICHAGE : " << cpu_time_used << " s (desactive)" << endl;
+
+    // --- TEST 3 : RECHERCHE ---
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        rechercherTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps RECHERCHE (" << NB_TESTS << ") : " << cpu_time_used << " s" << endl;
+
+    // --- TEST 4 : SUPPRESSION ---
+    // Note : pour que la suppression marche, il faut que ta fonction accepte
+    // de supprimer quelqu'un qui existe vraiment. On utilise le jeuDeTest.
+    start = clock();
+    for(int i = 0; i < NB_TESTS; i++) {
+        monTableau = supprimerTab(jeuDeTest[i], monTableau);
+    }
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    cout << "Temps SUPPRESSION (" << NB_TESTS << ") : " << cpu_time_used << " s" << endl;
+
+    // Nettoyage mémoire Tableau
+    delete monTableau;
     return 0;
 }
- 

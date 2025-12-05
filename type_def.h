@@ -20,7 +20,7 @@ typedef struct elementListe {
     elementListe* suivant;
 } elementListe;
 
-const int MAX_TAILLE = 100; // Taille fixe pour l'exemple
+const int MAX_TAILLE = 2000; // Taille fixe pour l'exemple
 
 typedef struct tableauTrie {
     personne tab[MAX_TAILLE]; // Le tableau de données
